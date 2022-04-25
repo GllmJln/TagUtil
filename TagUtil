@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+
+from mutagen.mp3 import EasyMP3
+import sys, getopt, ast
+from pathlib import Path
+import re
+
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv,"f:s:d:n:a:t:y:a:g:i:A:s:",["format=","separator=","delimiter="])
+    except getopt.GetoptError:
+        print("Error for some reason cba for error handling rn")
+        sys.exit(2)
+    
+    form=[-1,0,1,2,3,-1]
+    l = len(form)
+    tagi = [''] * l
+    sep = ' - '
+    delim = ' & '
+    ignore = ''
+    nosplit = ''
+
+    for opt, arg in opts:
+        if opt in ("-f", "--format"):
+            form = formatter(arg)
+        if opt in ("-s", "--separator"):
+            sep = arg
+        if opt in ("-d", "--delimiter"):
+            delim = ast.literal_eval(arg)
+        if opt == '-n':
+            tagi[0] = arg
+        if opt == '-a':
+            tagi[1] = arg
+        if opt == '-t':
+            tagi[2] = arg
+        if opt == '-y':
+            tagi[3] = arg
+        if opt == '-A':
+            tagi[4] = arg
+        if opt == '-g':
+            tagi[5] = arg
+        if opt == '-i':
+            ignore = arg
+        if opt == '-s':
+            nosplit = ast.literal_eval(arg)
+
+    setMetadata(args, form, sep, delim, tagi, ignore, nosplit)
+
+def formatter(form):
+    n = form.find('n') #0 tracknumber
+    a = form.find('a') #1 artist
+    t = form.find('t') #2 title
+    y = form.find('y') #3 year
+    A = form.find('A') #4 album
+    g = form.find('g') #5 genre
+    out = [n, a, t, y, A, g]
+    return out
+
+
+def split(delimiters, string, maxsplit=0):
+    if string != None or string != ['']:
+        # print(f"tsest {string}")
+        regexPattern = '|'.join(map(re.escape, delimiters)) #type: ignore
+        # print(regexPattern)
+        return re.split(regexPattern, string, maxsplit)
+    else:
+        return string
+
+
+def getName(filename, form, sep, delim, tagi, ignore, nosplit):
+    name = Path(filename).stem
+    data = name.split(sep)
+    tags = tagi.copy()
+    for idx, val in enumerate(form):
+        if val != -1 and tags[idx] == '':
+            try:
+                tags[idx] =  data[val]
+                if tags[idx] == ignore:
+                    tags[idx] = ''
+            except IndexError:
+                pass
+    tags[1] = split(delim, tags[1])
+    tags[5] = split(delim, tags[5])
+    return tags
+
+
+def setMetadata(args, form=[-1,0,1,2,3,-1], sep = ' - ', delim = " & ", tagi=['']*5, ignore='', nosplit=''):
+    for filename in args:
+        f = EasyMP3(filename)
+        tags = getName(filename, form, sep, delim, tagi, ignore, nosplit)
+        print(tags)
+        f["tracknumber"] = tags[0]
+        f["artist"] = tags[1]
+        f["title"] = tags[2]
+        f["date"] = tags[3]
+        f["album"] = tags[4]
+        f["genre"] = tags[5]
+        f.save()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
