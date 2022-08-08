@@ -7,9 +7,21 @@ import re
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv,"f:s:d:n:a:t:y:a:g:i:A:s:",["format=","separator=","delimiter="])
+        opts, args = getopt.getopt(argv,"f:s:d:n:t:y:a:g:i:A:s:",["format=","separator=","delimiter="])
     except getopt.GetoptError:
-        print("Error for some reason cba for error handling rn")
+        print("""
+        Usage:\n
+        --format, -f: Specifies the format to use for parsing the file name. Valid values: "n,a,t,y,A,g".
+        The order of the values specifies in which order the metadata arguments are specified in the name of the file. (e.g.: "at" will be understood as the format "artist-title").\n\n
+        --separator, -s: The separator is used to determine which character is used to separate two fields in the name of the file. Default is " - ".\n\n
+        --delimiter, -d: The delimiter is used to determine which character will be used to divide the same field into two discrete entities. This is applied to the artist and the genre tag only, in case there are multiple artists and multiple genres.\n\n
+        -n: used to set the track number.\n\n
+        -a: used to set the artist.\n\n
+        -t: used to set the title.\n\n
+        -y: used to set the year.\n\n
+        -A: used to set the album.\n\n
+        -g: used to set the genre.\n\n
+        """)
         sys.exit(2)
     
     form=[-1,0,1,2,3,-1]
@@ -61,7 +73,6 @@ def split(delimiters, string, maxsplit=0):
     if string != None or string != ['']:
         # print(f"tsest {string}")
         regexPattern = '|'.join(map(re.escape, delimiters)) #type: ignore
-        # print(regexPattern)
         return re.split(regexPattern, string, maxsplit)
     else:
         return string
